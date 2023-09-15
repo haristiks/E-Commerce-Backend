@@ -16,7 +16,7 @@ module.exports = {
     if (username === "admin@example.com" && password === "admin@123") {
       const token = jwt.sign(
         { username: username },
-        process.env.ACCESS_TOKEN_SECRET
+        process.env.ADMIN_ACCESS_TOKEN_SECRET
       );
       res.status(200).json({
         status: "success",
