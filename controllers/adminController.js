@@ -13,7 +13,8 @@ module.exports = {
   //
   login: async (req, res) => {
     const { username, password } = req.body;
-    if (username === "admin@example.com" && password === "admin@123") {
+    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+      //TODO use .env for passwords
       const token = jwt.sign(
         { username: username },
         process.env.ADMIN_ACCESS_TOKEN_SECRET
@@ -31,6 +32,7 @@ module.exports = {
   // Get all users list (GET api/admin/users)
   //
   getallusers: async (req, res) => {
+    //TODO CAMEL CASING
     const allusers = await User.find();
     res.status(200).json({
       status: "success",
@@ -68,8 +70,9 @@ module.exports = {
   // Get  list of products based on the category (GET api/admin/products?category=men)
   //
   getProductsByCatogory: async (req, res) => {
-    const category = req.query.category;
-    const products = await Product.find({ category: category });
+    const categ = req.query.name;
+    console.log(categ);
+    const products = await Product.find({ category: categ });
     if (!products) {
       return res.status(404).json({ error: "Category not found" });
     }
@@ -98,7 +101,7 @@ module.exports = {
   //Create products (POST api/admin/products)
   //
   createProduct: async (req, res) => {
-    const { title, description, image, price, category } = req.body;
+    const { title, description, image, price, category } = req.body; //TODO impliment multer and cloudinary
     await Product.create({
       title,
       description,
@@ -109,6 +112,87 @@ module.exports = {
     res.status(201).json({
       status: "success",
       message: "Successfully created a product.",
+    });
+  },
+  //
+  //Update a product (PUT api/admin/products)
+  //
+  updateProduct: async (req, res) => {
+    const { title, description, image, price, category, id } = req.body;
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    await Product.updateOne(
+      { _id: id },
+      {
+        $set: {
+          title: title,
+          description: description,
+          price: price,
+          image: image,
+          category: category,
+        },
+      }
+    );
+    res.status(201).json({
+      status: "success",
+      message: "Successfully updated the product.",
+    });
+  },
+  //
+  //Delete a product (DELETE api/admin/products)
+  //
+  deleteProduct: async (req, res) => {
+    const { id } = req.body;
+    await Product.findByIdAndDelete(id);
+    res.status(201).json({
+      status: "success",
+      message: "Successfully deleted the product.",
+    });
+  },
+  //
+  //Get stats (GET api/admin/stats)
+  //
+  stats: async (req, res) => {
+    const aggregation = User.aggregate([
+      {
+        $unwind: "$orders",
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$orders.totalamount" },
+          totalItemsSold: { $sum: { $size: "$orders.product" } },
+        },
+      },
+    ]);
+    const result = await aggregation.exec();
+    const totalRevenue = result[0].totalRevenue;
+    const totalItemsSold = result[0].totalItemsSold;
+
+    res.json({
+      status: "success",
+      message: "Successfully fetched stats.",
+      data: {
+        "Total Revenue": totalRevenue,
+        "Total Items Sold": totalItemsSold,
+      },
+    });
+  },
+  //
+  //Get the list of order details. (GET api/admin/orders)
+  //
+  orders: async (req, res) => {
+    const order = await User.find({ orders: { $exists: true } });
+    const orders = order.filter((item) => {
+      return item.orders.length > 0;
+    });
+
+    res.json({
+      status: "success",
+      message: "Successfully fetched order detail.",
+      data: orders,
     });
   },
 };

@@ -87,10 +87,9 @@ module.exports = {
   //
   addToCart: async (req, res) => {
     const userId = req.params.id;
-    console.log(req.body.productId);
-    const product = await Product.findById(req.body.productId);
-    console.log(product);
-    await User.updateOne({ _id: userId }, { $push: { cart: product } });
+    const productId=req.body.productId
+    // const product = await Product.findById(productId);
+    await User.updateOne({ _id: userId }, { $push: { cart: productId } });
     res.status(200).json({
       status: "success",
       message: "Successfully added product to cart.",
@@ -101,8 +100,9 @@ module.exports = {
   //
   deleteCart: async (req, res) => {
     const userId = req.params.id;
-    const product = await Product.findById(req.body.productId);
-    await User.updateOne({ _id: userId }, { $pull: { cart: product } });
+    const productId=req.body.productId
+    // const product = await Product.findById(req.body.productId);
+    await User.updateOne({ _id: userId }, { $pull: { cart: productId } });
     res.status(200).json({
       status: "success",
       message: "Successfully deleted product from Cart.",
@@ -113,7 +113,7 @@ module.exports = {
   //
   showCart: async (req, res) => {
     const userId = req.params.id;
-    const cart = await User.find({ _id: userId }, { cart: 1 });
+    const cart = await User.findOne({ _id: userId }).populate("cart");
     if (!cart) {
       return res.status(404).json({ error: "Nothing to show on Cart" });
     }
@@ -128,10 +128,8 @@ module.exports = {
   //
   addTowishlist: async (req, res) => {
     const userId = req.params.id;
-    console.log(req.body.productId);
-    const product = await Product.findById(req.body.productId);
-    console.log(product);
-    await User.updateOne({ _id: userId }, { $push: { wishlist: product } });
+    const productId = req.body.productId
+    await User.updateOne({ _id: userId }, { $addToSet: { wishlist: productId } }); //TODO impliment add to set operator  if alredy added throw error
     res.status(200).json({
       status: "success",
       message: "Successfully added product to wishlist.",
@@ -142,7 +140,7 @@ module.exports = {
   //
   showWishlist: async (req, res) => {
     const userId = req.params.id;
-    const wishlist = await User.find({ _id: userId }, { wishlist: 1 });
+    const wishlist = await User.find({ _id: userId }).populate("wishlist");
     if (!wishlist) {
       return res.status(404).json({ error: "Nothing to show on wishlist" });
     }
@@ -157,11 +155,83 @@ module.exports = {
   //
   deleteWishlist: async (req, res) => {
     const userId = req.params.id;
-    const product = await Product.findById(req.body.productId);
-    await User.updateOne({ _id: userId }, { $pull: { wishlist: product } });
+    const productId = req.body.productId;
+    await User.updateOne({ _id: userId }, { $pull: { wishlist: productId } });
     res.status(200).json({
       status: "success",
       message: "Successfully deleted product from wishlist.",
     });
+  },
+  //
+  //  user payment  (POST api/users/payment/:id)
+  //
+  payment: async (req, res) => {
+    const stripe = require("stripe")(process.env.STRIPE_KEY_SECRET);
+    const user = await User.find({ _id: req.params.id }).populate("cart");
+    const cartitem = user[0].cart.map((item) => {
+      return {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: item.title,
+            description: item.description,
+          },
+          unit_amount: Math.round(item.price * 100),
+        },
+        quantity: 1,
+      };
+    });
+    console.log(cartitem);
+    if (cartitem != 0) {
+      const session = await stripe.checkout.sessions.create({
+        line_items: cartitem,
+        mode: "payment",
+        success_url: `http://127.0.0.1:8000/api/users/payment/success`,
+        cancel_url: `http://127.0.0.1:8000/api/users/payment/cancel`,
+      });
+      temp = {
+        cartitem: user[0].cart,
+        id: req.params.id,
+        paymentid: session.id,
+        amount: session.amount_total / 100,
+      };
+
+      res.send({ url: session.url });
+    } else {
+      res.send("user no cart item");
+    }
+  },
+  //
+  //  user payment sucess (GET api/users/payment/sucess)
+  //
+  sucess: async (req, res) => {
+    const user = await User.find({ _id: temp.id });
+    if (user.length != 0) {
+      await User.updateOne(
+        { _id: temp.id },
+        {
+          $push: {
+            order: {
+              product: temp.cartitem,
+              date: new Date(),
+              orderid: Math.random(),
+              paymentid: temp.paymentid,
+              totalamount: temp.amount,
+            },
+          },
+        }
+      );
+      await User.updateOne({ _id: temp.id }, { cart: [] });
+    }
+    res.status(200).json({
+      status: "success",
+      message: "successfully added in order",
+    });
+  },
+  //
+  //  user payment sucess (POST api/users/payment/cancel)
+  //
+  cancel: async (req, res) => {
+    res.json("cancel");
   },
 };

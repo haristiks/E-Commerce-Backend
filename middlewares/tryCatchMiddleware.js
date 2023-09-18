@@ -8,7 +8,7 @@ const trycatchmiddleware = (trycatchhandler) =>{
             res.json({
                 status:"failure",
                 message:"error",
-                error_message:error.message,
+                error_message:error.message, //TODO add error handling middleware
              } )
         }
     }

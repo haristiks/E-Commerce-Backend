@@ -10,10 +10,10 @@ adminRouter.post('/login',TryCatch(adminController.login))
 adminRouter.get('/users',verifyToken,TryCatch(adminController.getallusers))
 adminRouter.get('/users/:id',verifyToken,TryCatch(adminController.getuserByid))
 adminRouter.get('/products/',verifyToken,TryCatch(adminController.getallProducts))
-adminRouter.get('/products?category=men',verifyToken,TryCatch(adminController.getProductsByCatogory))
+adminRouter.get('/products/category',verifyToken,TryCatch(adminController.getProductsByCatogory))
 adminRouter.get('/products/:id',verifyToken,TryCatch(adminController.getProductByid))
 adminRouter.post('/products',verifyToken,TryCatch(adminController.createProduct))
-// adminRouter.put('/products',verifyToken,TryCatch)
-// adminRouter.delete('/products',verifyToken,TryCatch)
+adminRouter.put('/products',verifyToken,TryCatch(adminController.updateProduct))
+adminRouter.delete('/products',verifyToken,TryCatch(adminController.deleteProduct))
 
 module.exports=adminRouter

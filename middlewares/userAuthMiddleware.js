@@ -4,7 +4,7 @@ module.exports = function verifyToken(req, res, next) {
   const token = req.headers["authorization"];
 
   if (!token) {
-    return res.status(403).json({ error: "No token provided" });
+    return res.status(403).json({ error: "No token provided" }); //TODO standardise response
   }
 
   jwt.verify(token, process.env.USER_ACCESS_TOKEN_SECRET, (err, decoded) => {

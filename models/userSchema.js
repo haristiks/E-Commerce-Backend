@@ -4,9 +4,9 @@ const userSchema = new mongoose.Schema({
   email: String,
   username: String,
   password: String,
-  cart: Array,
-  wishlist:Array,
-  orders:Array
+  cart: [{type:mongoose.Schema.ObjectId,ref:"Product"}],
+  wishlist:[{type:mongoose.Schema.ObjectId,ref:"Product"}],
+  orders:[]
 });
 
 module.exports=mongoose.model('User',userSchema);
