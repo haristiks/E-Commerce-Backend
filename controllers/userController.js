@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const User = require("../models/userSchema");
 const Product = require("../models/productSchema");
 const jwt = require("jsonwebtoken");
+const {joiUserSchema}=require("../models/validationSchema")
+const bcrypt=require("bcrypt")
 mongoose.connect("mongodb://0.0.0.0:27017/E-Commerce-Bakend", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -12,11 +14,16 @@ module.exports = {
   // Create a user with name, email, username (POST api/users/register)
   //
   createuser: async (req, res) => {
-    const { name, email, username } = req.body;
+    const {value,error}=joiUserSchema.validate(req.body);
+    const { name, email, username, password } = value;
+    if (error) {
+      res.json(error.message)
+    }
     await User.create({
       name: name,
       email: email,
       username: username,
+      password:await bcrypt.hash(password,10)
     });
     res.status(200).json({
       status: "success",
@@ -27,15 +34,24 @@ module.exports = {
   //User login    (POST api/users/login)
   //
   userLongin: async (req, res) => {
-    const { username, password } = req.body;
-
-    const user = User.findOne({ username: username, password: password });
+    const {value,error}=joiUserSchema.validate(req.body);
+    const { username, password } = value;
+    if (error) {
+      res.json(error.message)
+    }
+    const user = User.findOne({ username: username });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+    const checkPass=await bcrypt.compare(password,user.password)
+    if (!checkPass) {
+      res.json("password incorrect")
+    }
     const token = jwt.sign(
       { username: user.username },
-      process.env.USER_ACCESS_TOKEN_SECRET
+      process.env.USER_ACCESS_TOKEN_SECRET,{
+        expiresIn: 86400,
+      }
     );
     res
       .status(200)
@@ -120,7 +136,7 @@ module.exports = {
     res.status(200).json({
       status: "success",
       message: "Successfully fetched cart details.",
-      data: cart,
+      data: cart.cart,
     });
   },
   //

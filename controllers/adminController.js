@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const User = require("../models/userSchema");
 const Product = require("../models/productSchema");
 const jwt = require("jsonwebtoken");
+const {joiProductSchema}=require("../models/validationSchema")
 mongoose.connect("mongodb://0.0.0.0:27017/E-Commerce-Bakend", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -101,7 +102,11 @@ module.exports = {
   //Create products (POST api/admin/products)
   //
   createProduct: async (req, res) => {
-    const { title, description, image, price, category } = req.body; //TODO impliment multer and cloudinary
+    const {value,error}=joiProductSchema.validate(req.body)
+    const { title, description, image, price, category } = value;
+    if (error) {
+      res.json(error.message)
+    } //TODO impliment multer and cloudinary
     await Product.create({
       title,
       description,
