@@ -4,6 +4,7 @@ const Product = require("../models/productSchema");
 const jwt = require("jsonwebtoken");
 const { joiUserSchema } = require("../models/validationSchema");
 const bcrypt = require("bcrypt");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 mongoose.connect("mongodb://0.0.0.0:27017/E-Commerce-Bakend", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -14,16 +15,17 @@ module.exports = {
   // Create a user with name, email, username (POST api/users/register)
   //
   createUser: async (req, res) => {
-    const { value, error } = joiUserSchema.validate(req.body);
-    const { name, email, username, password } = value;
+    // const { value, error } = joiUserSchema.validate(req.body);
+    const { name, email, username, password } = req.body;
     if (error) {
       res.json(error.message);
     }
+    
     await User.create({
       name: name,
       email: email,
       username: username,
-      password: await bcrypt.hash(password, 10),
+      password: password,
     });
     res.status(201).json({
       status: "success",
@@ -35,16 +37,20 @@ module.exports = {
   //
   userLongin: async (req, res) => {
     const { value, error } = joiUserSchema.validate(req.body);
-    const { username, password } = value;
     if (error) {
       res.json(error.message);
     }
-    const user = User.findOne({ username: username });
+    const { username, password } = value;
+    const user = await User.findOne({ username: username });
     if (!user) {
       return res
         .status(404)
         .json({ status: "error", message: "User not found" });
     }
+    if (!password || !user.password) {
+      return res.status(400).json({ status: "error", message: "Invalid input" });
+    }
+    
     const checkPass = await bcrypt.compare(password, user.password);
     if (!checkPass) {
       res.status(400).json({ status: "error", message: "password incorrect" });
@@ -185,10 +191,10 @@ module.exports = {
     });
   },
   //
-  //  user payment  (POST api/users/payment/:id)
+  //  user payment  (POST api/users/:id/payment)
   //
   payment: async (req, res) => {
-    const stripe = require("stripe")(process.env.STRIPE_KEY_SECRET);
+    
     const user = await User.find({ _id: req.params.id }).populate("cart");
     const cartitem = user[0].cart.map((item) => {
       return {
@@ -204,7 +210,7 @@ module.exports = {
       };
     });
     console.log(cartitem);
-    if (cartitem != 0) {
+    if (cartitem.length > 0) {
       const session = await stripe.checkout.sessions.create({
         line_items: cartitem,
         mode: "payment",
