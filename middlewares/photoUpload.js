@@ -3,9 +3,9 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     cb(null, file.originalname);
   },
-  destination:"uploads/"
+  destination: "uploads/",
 });
-const uploade = multer({storage:storage});
+const uploade = multer({ storage: storage });
 const cloudinary = require("./cloudinary");
 
 const upload = (req, res, next) => {

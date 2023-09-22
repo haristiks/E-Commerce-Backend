@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const User = require("../models/userSchema");
 const Product = require("../models/productSchema");
 const jwt = require("jsonwebtoken");
-const {joiProductSchema}=require("../models/validationSchema")
+const { joiProductSchema } = require("../models/validationSchema");
 mongoose.connect("mongodb://0.0.0.0:27017/E-Commerce-Bakend", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -14,7 +14,10 @@ module.exports = {
   //
   login: async (req, res) => {
     const { username, password } = req.body;
-    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+    if (
+      username === process.env.ADMIN_USERNAME &&
+      password === process.env.ADMIN_PASSWORD
+    ) {
       //TODO use .env for passwords
       const token = jwt.sign(
         { username: username },
@@ -26,13 +29,16 @@ module.exports = {
         data: { jwt_token: token },
       });
     } else {
-      return res.status(404).json({ error: "Not an Admin" });
+      return res.status(404).json({
+        status: "error",
+        message: "Not an Admin",
+      });
     }
   },
   //
   // Get all users list (GET api/admin/users)
   //
-  getallusers: async (req, res) => {
+  getAllusers: async (req, res) => {
     //TODO CAMEL CASING
     const allusers = await User.find();
     res.status(200).json({
@@ -44,7 +50,7 @@ module.exports = {
   //
   // Get a specific user based on the id provided (GET api/admin/users/:id)
   //
-  getuserByid: async (req, res) => {
+  getUserByid: async (req, res) => {
     const userId = req.params.id;
     const user = await User.findById(userId);
     if (!user) {
@@ -59,7 +65,7 @@ module.exports = {
   //
   // Get all products list (GET api/admin/users)
   //
-  getallProducts: async (req, res) => {
+  getAllProducts: async (req, res) => {
     const allproducts = await Product.find();
     res.status(200).json({
       status: "success",
@@ -86,7 +92,7 @@ module.exports = {
   //
   // Get a product based on the id provided (GET api/admin/products/:id)
   //
-  getProductByid: async (req, res) => {
+  getProductById: async (req, res) => {
     const productId = req.params.id;
     const product = await Product.findById(productId);
     if (!product) {
@@ -102,10 +108,10 @@ module.exports = {
   //Create products (POST api/admin/products)
   //
   createProduct: async (req, res) => {
-    const {value,error}=joiProductSchema.validate(req.body)
+    const { value, error } = joiProductSchema.validate(req.body);
     const { title, description, image, price, category } = value;
     if (error) {
-      res.json(error.message)
+      res.json(error.message);
     } //TODO impliment multer and cloudinary
     await Product.create({
       title,
@@ -176,7 +182,7 @@ module.exports = {
     const totalRevenue = result[0].totalRevenue;
     const totalItemsSold = result[0].totalItemsSold;
 
-    res.json({
+    res.status(200).json({
       status: "success",
       message: "Successfully fetched stats.",
       data: {
@@ -194,7 +200,7 @@ module.exports = {
       return item.orders.length > 0;
     });
 
-    res.json({
+    res.status(200).json({
       status: "success",
       message: "Successfully fetched order detail.",
       data: orders,

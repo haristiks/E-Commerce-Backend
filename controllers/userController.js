@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 const User = require("../models/userSchema");
 const Product = require("../models/productSchema");
 const jwt = require("jsonwebtoken");
-const {joiUserSchema}=require("../models/validationSchema")
-const bcrypt=require("bcrypt")
+const { joiUserSchema } = require("../models/validationSchema");
+const bcrypt = require("bcrypt");
 mongoose.connect("mongodb://0.0.0.0:27017/E-Commerce-Bakend", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -13,19 +13,19 @@ module.exports = {
   //
   // Create a user with name, email, username (POST api/users/register)
   //
-  createuser: async (req, res) => {
-    const {value,error}=joiUserSchema.validate(req.body);
+  createUser: async (req, res) => {
+    const { value, error } = joiUserSchema.validate(req.body);
     const { name, email, username, password } = value;
     if (error) {
-      res.json(error.message)
+      res.json(error.message);
     }
     await User.create({
       name: name,
       email: email,
       username: username,
-      password:await bcrypt.hash(password,10)
+      password: await bcrypt.hash(password, 10),
     });
-    res.status(200).json({
+    res.status(201).json({
       status: "success",
       message: "user registration successfull.",
     });
@@ -34,22 +34,25 @@ module.exports = {
   //User login    (POST api/users/login)
   //
   userLongin: async (req, res) => {
-    const {value,error}=joiUserSchema.validate(req.body);
+    const { value, error } = joiUserSchema.validate(req.body);
     const { username, password } = value;
     if (error) {
-      res.json(error.message)
+      res.json(error.message);
     }
     const user = User.findOne({ username: username });
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res
+        .status(404)
+        .json({ status: "error", message: "User not found" });
     }
-    const checkPass=await bcrypt.compare(password,user.password)
+    const checkPass = await bcrypt.compare(password, user.password);
     if (!checkPass) {
-      res.json("password incorrect")
+      res.status(400).json({ status: "error", message: "password incorrect" });
     }
     const token = jwt.sign(
       { username: user.username },
-      process.env.USER_ACCESS_TOKEN_SECRET,{
+      process.env.USER_ACCESS_TOKEN_SECRET,
+      {
         expiresIn: 86400,
       }
     );
@@ -103,10 +106,10 @@ module.exports = {
   //
   addToCart: async (req, res) => {
     const userId = req.params.id;
-    const productId=req.body.productId
+    const productId = req.body.productId;
     // const product = await Product.findById(productId);
     await User.updateOne({ _id: userId }, { $push: { cart: productId } });
-    res.status(200).json({
+    res.status(201).json({
       status: "success",
       message: "Successfully added product to cart.",
     });
@@ -116,7 +119,7 @@ module.exports = {
   //
   deleteCart: async (req, res) => {
     const userId = req.params.id;
-    const productId=req.body.productId
+    const productId = req.body.productId;
     // const product = await Product.findById(req.body.productId);
     await User.updateOne({ _id: userId }, { $pull: { cart: productId } });
     res.status(200).json({
@@ -142,10 +145,13 @@ module.exports = {
   //
   // add product to wishlist   (POST api/users/:id/wishlists/)
   //
-  addTowishlist: async (req, res) => {
+  addToWishlist: async (req, res) => {
     const userId = req.params.id;
-    const productId = req.body.productId
-    await User.updateOne({ _id: userId }, { $addToSet: { wishlist: productId } }); //TODO impliment add to set operator  if alredy added throw error
+    const productId = req.body.productId;
+    await User.updateOne(
+      { _id: userId },
+      { $addToSet: { wishlist: productId } }
+    ); //TODO impliment add to set operator  if alredy added throw error
     res.status(200).json({
       status: "success",
       message: "Successfully added product to wishlist.",
