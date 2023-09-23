@@ -10,6 +10,8 @@ mongoose.connect("mongodb://0.0.0.0:27017/E-Commerce-Bakend", {
   useUnifiedTopology: true,
 });
 
+let temp;
+
 module.exports = {
   //
   // Create a user with name, email, username (POST api/users/register)
@@ -233,13 +235,14 @@ module.exports = {
   //  user payment sucess (GET api/users/payment/sucess)
   //
   sucess: async (req, res) => {
+    console.log(temp);
     const user = await User.find({ _id: temp.id });
     if (user.length != 0) {
       await User.updateOne(
         { _id: temp.id },
         {
           $push: {
-            order: {
+            orders: {
               product: temp.cartitem,
               date: new Date(),
               orderid: Math.random(),
