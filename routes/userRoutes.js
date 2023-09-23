@@ -16,8 +16,8 @@ userRouter.post('/:id/wishlist',verifyToken,TryCatch(userController.addToWishlis
 userRouter.get('/:id/wishlist',verifyToken,TryCatch(userController.showWishlist))
 userRouter.delete('/:id/wishlist',verifyToken,TryCatch(userController.deleteWishlist))
 userRouter.post('/:id/payment',verifyToken, TryCatch(userController.payment))
-userRouter.get('/payment/success', verifyToken,TryCatch(userController.sucess))
-userRouter.post('/payment/cancel', verifyToken, TryCatch(userController.cancel))
+userRouter.get('/payment/success', TryCatch(userController.sucess))
+userRouter.post('/payment/cancel', TryCatch(userController.cancel))
 
 
 module.exports=userRouter

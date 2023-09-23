@@ -220,7 +220,7 @@ module.exports = {
         cancel_url: `http://127.0.0.1:8000/api/users/payment/cancel`,
       });
       temp = {
-        cartitem: user[0].cart,
+        cartitem: user[0].cart.map((item)=>item._id),
         id: req.params.id,
         paymentid: session.id,
         amount: session.amount_total / 100,

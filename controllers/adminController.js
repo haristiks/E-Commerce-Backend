@@ -195,7 +195,7 @@ module.exports = {
   //Get the list of order details. (GET api/admin/orders)
   //
   orders: async (req, res) => {
-    const order = await User.find({ orders: { $exists: true } });
+    const order = await User.find({ orders: { $exists: true } },{orders:1});
     const orders = order.filter((item) => {
       return item.orders.length > 0;
     });
