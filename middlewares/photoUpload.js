@@ -6,7 +6,7 @@ const storage = multer.diskStorage({
   destination: "uploads/",
 });
 const uploade = multer({ storage: storage });
-const cloudinary = require("./cloudinary");
+const cloudinary = require("../utils/cloudinary");
 
 const upload = (req, res, next) => {
   uploade.single("image")(req, res, async (err) => {
